@@ -1,4 +1,5 @@
 ﻿
+
 using System.CommandLine;
 
 namespace CsCommandLine;
@@ -51,4 +52,5 @@ static partial class Program
     return root.Invoke(args);
   }
 }
+
 

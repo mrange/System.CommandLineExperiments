@@ -1,0 +1,85 @@
+﻿<#@ assembly name="System.Core"     #>
+<#@ import namespace="System.Linq"  #>
+
+using System.CommandLine;
+
+namespace CsCommandLine;
+
+<# var prefix = ""; #>
+static partial class Program
+{
+  static partial void OnExecute(
+<# prefix = "  "; #>
+<# foreach (var (required, type, name, descr) in options) { #>
+    <#=prefix#><#=type#> <#=name#>
+<# prefix = ", "; #>
+<# } #>
+    );
+
+  static void RootHandler(
+<# prefix = "  "; #>
+<# foreach (var (required, type, name, descr) in options) { #>
+    <#=prefix#><#=type#> <#=name#>
+<# prefix = ", "; #>
+<# } #>
+    )
+  {
+    OnExecute(
+<# prefix = "  "; #>
+<# foreach (var (required, type, name, descr) in options) { #>
+    <#=prefix#><#=name#>
+<# prefix = ", "; #>
+<# } #>
+    );
+  }
+
+  public static int Main(string[] args)
+  { 
+    var root = new RootCommand("<#=rootDescription#>");
+
+<# foreach (var (required, type, name, descr) in options) { #>
+    // Option: <#= name #>
+    var opt_<#=name#> = new Option<<#=type#>>(name: "--<#=name#>", description: "<#=descr#>")
+      {
+        IsRequired = <#=required ? "true" : "false"#>
+      };
+    root.AddOption(opt_<#=name#>);
+<# } #>
+
+<#
+//  var types = "string";
+  var types = string.Join(", ", options.Select(x => x.Item2));
+#>
+    Action<<#=types#>> handler = RootHandler;
+    root.SetHandler(
+        handler
+<# foreach (var (required, type, name, descr) in options) { #>
+      , opt_<#=name#>
+<# } #>
+      );
+
+    // To my understanding the handlers are synchronous meaning
+    //  I don't see much point invoking the command handler has
+    //  async.
+    return root.Invoke(args);
+  }
+}
+
+<#+
+(bool, string, string, string) Required(
+    string          type
+  , string          name
+  , string          descr
+  )
+{
+  return (true, type, name, descr);
+}
+(bool, string, string, string) Optional(
+    string          type
+  , string          name
+  , string          descr
+  )
+{
+  return (false, type+"?", name, descr);
+}
+#>
